@@ -1,0 +1,91 @@
+---
+- name: Provision Web Servers
+  hosts: webservers
+  become: true
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Ensure Nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+- name: Provision Isolated Database Server
+  hosts: dbservers
+  become: true
+  tasks:
+    - name: Install MySQL Server & PyMySQL
+      apt:
+        name:
+          - mysql-server
+          - python3-pymysql
+        state: present
+        update_cache: yes
+
+    - name: Bind MySQL strictly to private internal interface (10.0.2.10)
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address'
+        line: 'bind-address = 10.0.2.10'
+      notify: Restart MySQL
+
+    - name: Enable UFW Firewall allowing port 3306 ONLY from internal net
+      ufw:
+        rule: allow
+        port: '3306'
+        proto: tcp
+        src: '10.0.2.0/24'
+        state: enabled
+
+  handlers:
+    - name: Restart MySQL
+      service:
+        name: mysql
+        state: restarted
+- name: Deploy Node Exporter across all nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Download Node Exporter
+      get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract Node Exporter
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /usr/local/bin
+        remote_src: yes
+        extra_opts: [--strip-components=1, --wildcards, '*/node_exporter']
+
+    - name: Create Systemd Service for Node Exporter
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User=root
+          ExecStart=/usr/local/bin/node_exporter
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable Node Exporter
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+    - name: Allow Node Exporter port in UFW
+      ufw:
+        rule: allow
+        port: '9100'
+        proto: tcp
