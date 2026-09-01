@@ -1,0 +1,21 @@
+name: Continuous Infrastructure Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-infrastructure:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Syntax Check Playbooks
+        run: |
+          cd ansible && ansible-playbook -i hosts.ini site.yml --syntax-check
+
+      - name: Apply Ansible Infrastructure
+        run: |
+          cd ansible && ansible-playbook -i hosts.ini site.yml
