@@ -1,5 +1,5 @@
 ---
-- name: Provision Web Servers
+- name: Provision all web servers (Local and Cloud)
   hosts: webservers
   become: true
   tasks:
@@ -15,11 +15,11 @@
         state: started
         enabled: true
 
-- name: Provision Isolated Database Server
+- name: Provision Isolated database Server
   hosts: dbservers
   become: true
   tasks:
-    - name: Install MySQL Server & PyMySQL
+    - name: install MySQL Server & PyMySQL
       apt:
         name:
           - mysql-server
@@ -27,14 +27,14 @@
         state: present
         update_cache: yes
 
-    - name: Bind MySQL strictly to private internal interface (10.0.2.10)
+    - name: MySQL strictly to private internal interface (10.0.2.10)
       lineinfile:
         path: /etc/mysql/mysql.conf.d/mysqld.cnf
         regexp: '^bind-address'
         line: 'bind-address = 10.0.2.10'
       notify: Restart MySQL
 
-    - name: Enable UFW Firewall allowing port 3306 ONLY from internal net
+    - name: enabled UFW Firewall allowing port 3306 ONLY from internal net
       ufw:
         rule: allow
         port: '3306'
@@ -47,7 +47,8 @@
       service:
         name: mysql
         state: restarted
-- name: Deploy Node Exporter across all nodes
+
+- name: deploy Node Exporter across all nodes (Local & AWS Cloud)
   hosts: all
   become: true
   tasks:
@@ -56,14 +57,14 @@
         url: https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
         dest: /tmp/node_exporter.tar.gz
 
-    - name: Extract Node Exporter
+    - name: extract Node Exporter
       unarchive:
         src: /tmp/node_exporter.tar.gz
         dest: /usr/local/bin
         remote_src: yes
         extra_opts: [--strip-components=1, --wildcards, '*/node_exporter']
 
-    - name: Create Systemd Service for Node Exporter
+    - name: create Systemd Service for Node Exporter
       copy:
         dest: /etc/systemd/system/node_exporter.service
         content: |
@@ -81,6 +82,7 @@
     - name: Start and enable Node Exporter
       systemd:
         name: node_exporter
+        daemon_reload: yes
         state: started
         enabled: yes
 
