@@ -24,7 +24,7 @@ resource "aws_security_group" "app_sg" {
     from_port   = 9100
     to_port     = 9100
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict to local public IP in production
+    cidr_blocks = ["0.0.0.0/0"] # restrict to local public IP in production
   }
 
   egress {
