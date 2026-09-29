@@ -12,7 +12,7 @@ provider "aws" {
   region = "eu-central-1"
 }
 
-# 1. VPC Definition
+# 1. VPC definition
 resource "aws_vpc" "main" {
   cidr_block           = "10.1.0.0/16"
   enable_dns_hostnames = true
@@ -23,7 +23,7 @@ resource "aws_vpc" "main" {
   }
 }
 
-# 2. Internet Gateway
+# 2. internet gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
@@ -32,7 +32,7 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
-# 3. Public Subnet
+# 3. Public subnet
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.1.1.0/24"
@@ -44,7 +44,7 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
-# 4. Route Table
+# 4. route table
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
 
@@ -80,7 +80,7 @@ resource "aws_key_pair" "deployer" {
   public_key = file("C:/Users/y/.ssh/aws_ec2_key.pub")
 }
 
-# 7. Cloud Web Server (EC2)
+# 7. cloud Web Server (EC2)
 resource "aws_instance" "aws_app01" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.micro"
